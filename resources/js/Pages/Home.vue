@@ -11,7 +11,7 @@ const header = ref("header");
   <GuestLayout :title="header">
     <!-- <AppLayout :title="header"> -->
     <div class="text-black">
-      Dashboard
+      Home
     </div>
 
   </GuestLayout>
