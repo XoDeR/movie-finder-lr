@@ -5,115 +5,79 @@ declare(strict_types=1);
 namespace App\Models\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
-/**
- * @mixin Model
- * @property array $allowedFilters
- */
-trait HasFilters
+trait HasSorts
 {
-    private Builder $filterQuery;
+    private Builder $sortQuery;
 
-    public function scopeFilter(Builder $query): Builder
+    public function scopeSort(Builder $query): Builder
     {
-        $this->filterQuery = $query;
-
-        $this->applyRequestFilters(request());
-
-        return $this->filterQuery;
+        $this->sortQuery = $query;
+        return $this->applyRequestSorts(request());
     }
 
-    public function getFilterType(string $name): string
+    public function checkSortColumnValidity($column): bool
     {
-        return self::$allowedFilters[$name]['filterType'] ?? 'exact';
-    }
-
-    private function getColumnName(string $name): ?string
-    {
-        return self::$allowedFilters[$name]['columnName'] ?? null;
-    }
-
-    public function getColumnType(string $name): ?string
-    {
-        return self::$allowedFilters[$name]['columnType'] ?? null;
-    }
-
-    private function checkFilterValidity(string $filterName): bool
-    {
-        if (! property_exists($this, 'allowedFilters') || ! is_array(self::$allowedFilters)) {
+        if (! property_exists($this, 'allowedSortColumns') || ! is_array(self::$allowedSortColumns)) {
             return false;
         }
 
-        return (bool) $this->getColumnName($filterName);
-    }
+        $validity = array_key_exists($column, self::$allowedSortColumns) && empty(self::$allowedSortColumns[$column]);
 
-    public function applyRequestFilters(Request $request): Builder
-    {
-        if (! $filters = $request->collect('filter')->filter()->toArray()) {
-            return $this->query();
+        if (! empty(self::$allowedSortColumns[$column]) && array_key_exists('columnName', self::$allowedSortColumns[$column])) {
+            $validity = true;
         }
 
-        collect($filters)->each(function (string|array $value, string $name): void {
-            if (! $this->checkFilterValidity($name)) {
+        return  $validity;
+    }
+
+    private function applyRequestSorts(Request $request): Builder
+    {
+        if (! $request->filled('sort')) {
+            return $this->applyDefaultSort();
+        }
+
+        $sorts = $request->query('sort');
+
+        if (str($sorts)->contains(',')) {
+            $sorts = collect(explode(',', $sorts));
+        }
+
+        $sorts = collect(Arr::wrap($sorts));
+
+        $sorts->each(function ($value): void {
+            if (! $this->checkSortColumnValidity($value)) {
                 return;
             }
 
-            $filterType = $this->getFilterType($name);
-            $columnName = $this->getColumnName($name);
-            $columnType = $this->getColumnType($name);
+            $columnName = self::$allowedSortColumns[$value]['columnName'] ?? $value;
 
-            if ($columnType === 'json') {
-                $this->applyJsonFilters($columnName, $value);
+            if (str($value)->startsWith('-')) {
+                $columnName = str($columnName)->replaceFirst('-', '')->toString();
+                $this->applyDescendingSort($columnName);
                 return;
             }
 
-            $this->applyFilter($columnName, $value, $filterType);
+            $this->applyAscendingSort($columnName);
         });
 
-        return $this->filterQuery;
+        return $this->sortQuery;
     }
 
-    public function applyJsonFilters(string $columnName, $value): void
+    private function applyDescendingSort($value): void
     {
-        $this->filterQuery->whereJsonContains($columnName, $value);
+        $this->sortQuery->orderByRaw("{$value} is null")->orderByDesc($value);
     }
 
-    private function applyFilter(string $columnName, $value, ?string $type = null): void
+    private function applyAscendingSort($value): void
     {
-        if ($type === 'exists') {
-            $type = filter_var($value, FILTER_VALIDATE_BOOLEAN) ? 'notNull' : 'null';
-        }
+        $this->sortQuery->orderByRaw("{$value} is null")->orderBy($value);
+    }
 
-        switch ($type) {
-            case 'partial':
-                $this->filterQuery->where($columnName, 'like', "%{$value}%");
-                break;
-
-            case 'dateBetween':
-                $this->filterQuery->whereBetween($columnName, [
-                    Arr::get($value, 'from', now()->subCenturies(2)),
-                    Arr::get($value, 'to', now()),
-                ]);
-                break;
-            case 'between':
-                $this->filterQuery->whereBetween($columnName, [
-                    Arr::get($value, 'from'),
-                    Arr::get($value, 'to'),
-                ]);
-                break;
-            case 'notNull':
-                $this->filterQuery->whereNotNull($columnName);
-                break;
-
-            case 'null':
-                $this->filterQuery->whereNull($columnName);
-                break;
-
-            default:
-                $this->filterQuery->where($columnName, $value);
-        }
+    private function applyDefaultSort(): Builder
+    {
+        return $this->sortQuery->latest();
     }
 }
