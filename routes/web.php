@@ -23,12 +23,13 @@ Route::name('home.')->group(function (): void {
 });
 
 // dashboard public for test
+/*
 Route::name('dashboard.')->group(function (): void {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('index');
 });
+*/
 
 // dashboard (protected)
-/*
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
@@ -38,7 +39,6 @@ Route::middleware([
     ->group(function (): void {
         Route::get('/dashboard', [DashboardController::class, 'index']);
     });
-*/
 
 /*
 // original home (welcome) page

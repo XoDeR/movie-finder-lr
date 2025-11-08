@@ -1,6 +1,5 @@
 <script setup>
-//import AppLayout from '@/Layouts/AppLayout.vue';
-import GuestLayout from "@/Layouts/GuestLayout.vue";
+import AppLayout from '@/Layouts/AppLayout.vue';
 import { ref } from 'vue';
 
 const header = ref("header");
@@ -8,12 +7,9 @@ const header = ref("header");
 </script>
 
 <template>
-  <GuestLayout :title="header">
-    <!-- <AppLayout :title="header"> -->
+  <AppLayout :title="header">
     <div class="text-black">
       Dashboard
     </div>
-
-  </GuestLayout>
-  <!-- </AppLayout> -->
+  </AppLayout>
 </template>
