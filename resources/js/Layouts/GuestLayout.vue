@@ -5,6 +5,7 @@ import { ref } from "vue";
 import Banner from '@/Components/Banner.vue';
 import NavLink from "@/Components/NavLink.vue";
 import ApplicationMark from "@/Components/ApplicationMark.vue";
+import { truncate } from '@/helpers';
 
 // TODO missing: Button, truncate
 
