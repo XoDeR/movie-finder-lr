@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\WatchList;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,6 +21,7 @@ class MovieFactory extends Factory
         $genresCount = count($genres);
 
         return [
+            'watch_list_id' => WatchList::factory(),
             'imdb_id' => $this->faker->word(),
             'yts_id' => $this->faker->randomDigit(),
             'image' => $this->faker->imageUrl(),
