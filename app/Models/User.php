@@ -9,6 +9,9 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Illuminate\Support\Facades\Auth;
 
 class User extends Authenticatable
 {
@@ -58,4 +61,22 @@ class User extends Authenticatable
     protected $appends = [
         'profile_photo_url',
     ];
+
+    public function canTorrent(): bool
+    {
+        // Temp: enabled for default seeded user
+        return Auth::user()?->email === 'john@demo.com';
+    }
+
+    // has one watchList
+    public function watchList(): HasOne
+    {
+        return $this->hasOne(WatchList::class);
+    }
+
+    // has many movies through watchList
+    public function movies(): HasOneThrough
+    {
+        return $this->hasOneThrough(Movie::class, WatchList::class);
+    }
 }
