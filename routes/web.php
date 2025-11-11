@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MovieController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -52,6 +53,13 @@ Route::get('/', function () {
 });
 */
 
+// public
+Route::name('movies.')->prefix('/movies')->group(function (): void {
+    Route::get('/{id}', [MovieController::class, 'show'])->name('show');
+});
+Route::get('movies-browse', [MovieController::class, 'browse'])->name('movies.browse');
+
+// protected dashboard-initial
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
